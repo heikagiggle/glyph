@@ -1,8 +1,7 @@
-
 export const LEVEL_CONFIG = {
   easy: {
     label: "Easy",
-    time: 10,
+    time: 30,
     color: "from-emerald-500 to-teal-500",
     shadow: "shadow-emerald-500/40",
     steps: [2, 3, 4],

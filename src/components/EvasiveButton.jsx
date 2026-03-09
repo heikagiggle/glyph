@@ -19,7 +19,7 @@ const EvasiveButton = ({ dark }) => {
     const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (dist < FLEE_RADIUS) {
-      const angle = Math.atan2(dy, dx) + Math.PI; // flee opposite direction
+      const angle = Math.atan2(dy, dx) + Math.PI; 
       const flee = 90 + Math.random() * 60;
       const nx = posRef.current.x + Math.cos(angle) * flee;
       const ny = posRef.current.y + Math.sin(angle) * flee;
