@@ -1,0 +1,160 @@
+/* @tailwind base;
+@tailwind components;
+@tailwind utilities; */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap");
+@import "tailwindcss";
+
+* {
+  font-family: "Poppins", sans-serif;
+  box-sizing: border-box;
+}
+
+/* ── Mesh gradient keyframe ── */
+@keyframes meshMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ── Metallic shimmer on letter tiles ── */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* ── Floating logo ── */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ── Timer danger pulse ── */
+@keyframes timerPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+}
+
+/* ── Mesh backgrounds ── */
+.mesh-light {
+  background: linear-gradient(
+    -45deg,
+    #ffffff,
+    #d1fae5,
+    #a7f3d0,
+    #e0f2fe,
+    #f0fdf4,
+    #ccfbf1
+  );
+  background-size: 400% 400%;
+  animation: meshMove 12s ease infinite;
+}
+.mesh-dark {
+  background: linear-gradient(
+    -45deg,
+    #0f172a,
+    #1e1b4b,
+    #0f172a,
+    #134e4a,
+    #1e1b4b,
+    #0f172a
+  );
+  background-size: 400% 400%;
+  animation: meshMove 12s ease infinite;
+}
+
+/* ── Letter tile shimmer overlay ── */
+.metallic-shimmer {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 60%
+  );
+  background-size: 200% auto;
+  animation: shimmer var(--shimmer-dur, 3s) linear infinite;
+}
+
+/* ── Letter card hover / tap ── */
+.letter-card {
+  transition:
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.letter-card:hover {
+  transform: scale(1.18) translateY(-2px);
+  filter: brightness(1.3);
+}
+.letter-card:active {
+  transform: scale(0.95);
+}
+
+/* ── Floating logo ── */
+.glyph-logo {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ── Timer danger pulse ── */
+.timer-danger {
+  animation: timerPulse 0.6s ease infinite;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.4);
+  border-radius: 2px;
+}
+
+/* Update in index.css */
+
+.glitter-on-letter {
+  /* 8 points of light instead of 4 for that "plenty" look */
+  background-image: 
+    radial-gradient(circle at 20% 30%, white 1.5px, transparent 3px),
+    radial-gradient(circle at 80% 20%, white 1.5px, transparent 3px),
+    radial-gradient(circle at 50% 80%, white 1.5px, transparent 3px),
+    radial-gradient(circle at 70% 60%, white 1.2px, transparent 3px),
+    radial-gradient(circle at 30% 70%, white 1.5px, transparent 3px),
+    radial-gradient(circle at 10% 10%, white 1.2px, transparent 3px),
+    radial-gradient(circle at 90% 90%, white 1.5px, transparent 3px),
+    radial-gradient(circle at 40% 40%, white 1.2px, transparent 3px);
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+
+@keyframes christmasGlint {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50% { 
+    opacity: 1; 
+    transform: scale(1.5) rotate(180deg); 
+    /* This creates the 'shine' even in light mode */
+    filter: brightness(1.5) blur(0.5px); 
+  }
+}
