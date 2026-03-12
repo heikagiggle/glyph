@@ -22,7 +22,7 @@ const getGrade = (total, maxPossible) => {
 
 const getHeadline = (total, maxPossible) => {
   if (total === 0) return "Keep Practicing!";
-  if (total >= maxPossible * 0.7) return "Outstanding! 🌟";
+  if (total >= maxPossible * 0.7) return "Keep it up! 🌟";
   return "Nice Work!";
 };
 
@@ -36,7 +36,7 @@ const ResultsScreen = ({
 }) => {
   const cfg = LEVEL_CONFIG[level];
   const total = scores.reduce((a, b) => a + b, 0);
-  const maxPossible = cfg.steps.reduce((acc, len) => acc + len * 2 * 5, 0); // rough ceiling
+  const maxPossible = cfg.steps.reduce((acc, len) => acc + len * 2 * 5, 0); 
   const grade = getGrade(total, maxPossible);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ const ResultsScreen = ({
       className="flex flex-col items-center justify-start min-h-screen pt-16 px-4 pb-12"
     >
       {/* ── Grade Badge ── */}
-      <motion.div
+      {/* <motion.div
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 180, damping: 14, delay: 0.1 }}
@@ -63,10 +63,10 @@ const ResultsScreen = ({
         style={{ boxShadow: "0 0 40px rgba(16,185,129,0.4)" }}
       >
         {grade}
-      </motion.div>
+      </motion.div> */}
 
       <motion.h2
-        className={`text-2xl font-black mb-1 ${dark ? "text-white" : "text-slate-800"}`}
+        className={`text-2xl font-black mb-4 ${dark ? "text-white" : "text-slate-800"}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.25 }}
@@ -74,14 +74,14 @@ const ResultsScreen = ({
         {getHeadline(total, maxPossible)}
       </motion.h2>
 
-      <motion.p
+      {/* <motion.p
         className={`text-sm mb-8 ${dark ? "text-white/50" : "text-slate-500"}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
         {cfg.label} Mode Complete
-      </motion.p>
+      </motion.p>  */}
 
       {/* ── Total Score Card ── */}
       <motion.div
@@ -97,18 +97,18 @@ const ResultsScreen = ({
       >
         <div
           className={`text-xs font-bold uppercase tracking-widest mb-2
-          ${dark ? "text-white/40" : "text-slate-400"}`}
+          ${dark ? "text-white/40" : "text-slate-700"}`}
         >
           Total Score
         </div>
         <div
           className="text-4xl font-black
-          bg-gradient-to-br from-emerald-400 to-teal-400 bg-clip-text text-transparent"
+          bg-linear-to-br from-emerald-400 to-teal-400 bg-clip-text text-transparent"
         >
           {total}
         </div>
         <div
-          className={`text-sm mt-1 ${dark ? "text-white/40" : "text-slate-400"}`}
+          className={`text-sm mt-1 ${dark ? "text-white/40" : "text-slate-600"}`}
         >
           points earned
         </div>
@@ -145,19 +145,19 @@ const ResultsScreen = ({
               </div>
               <div
                 className="text-xl font-black
-                bg-gradient-to-br from-emerald-400 to-teal-400 bg-clip-text text-transparent"
+                bg-linear-to-br from-emerald-400 to-teal-400 bg-clip-text text-transparent"
               >
                 {scores[i]}pts
               </div>
             </div>
 
-            {stepWords[i].length > 0 ? (
+            {(stepWords[i] || []).length > 0 ? (
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {stepWords[i].map((w, j) => (
+                {(stepWords[i] || []).map((w, j) => (
                   <span
                     key={j}
                     className="px-2 py-0.5 rounded-lg text-xs font-semibold
-                    bg-gradient-to-r from-emerald-500/80 to-teal-500/80 text-white"
+                    bg-linear-to-r from-emerald-500/80 to-teal-500/80 text-white"
                   >
                     {w.word}
                   </span>
@@ -183,8 +183,8 @@ const ResultsScreen = ({
           }}
           whileTap={{ scale: 0.97 }}
           onClick={onPlayAgain}
-          className="w-full py-2 rounded-xl font-black text-white text-base font-medium
-            bg-gradient-to-r from-emerald-500 to-teal-500
+          className="w-full py-2 rounded-xl font-black text-white text-base
+            bg-linear-to-r from-emerald-500 to-teal-500
             shadow-lg shadow-emerald-500/30"
         >
           Play Again 🔄

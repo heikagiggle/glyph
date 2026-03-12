@@ -9,8 +9,6 @@ import { isValidWord } from "../utils/wordList";
 
 const MAX_WORDS_PER_ROUND = 10;
 
-// ─── GameBoard ─────────────────────────────────────────────────────────────────
-
 const GameBoard = ({ dark, level, onGameEnd }) => {
   const cfg = LEVEL_CONFIG[level];
 
@@ -27,40 +25,49 @@ const GameBoard = ({ dark, level, onGameEnd }) => {
 
   const timerRef = useRef(null);
   const stepRef = useRef(1);
+  const scoresRef = useRef(scores);
+  const stepWordsRef = useRef(stepWords);
   const currentStep = step - 1;
   const wordLen = cfg.steps[currentStep] ?? 2;
 
-  // ── Timer helpers ──────────────────────────────────────────────────────────
   const stopTimer = useCallback(() => clearInterval(timerRef.current), []);
 
-const advanceStep = useCallback(() => {
-  stopTimer();
+  useEffect(() => {
+    scoresRef.current = scores;
+  }, [scores]);
 
-  const live = stepRef.current;
+  useEffect(() => {
+    stepWordsRef.current = stepWords;
+  }, [stepWords]);
 
-  if (live < 3) {
-    const next = live + 1;
-
-    setTimeout(() => {
-      stepRef.current = next;
-
-      setStep(next);
-      setSelected([]);
-      setCurrentWord("");
-      setTimeLeft(cfg.time);
-      setShowTransition(true);
-    }, 400);
-  } else {
+  const advanceStep = useCallback(() => {
     stopTimer();
 
-    const finalScores = scores;
-    const finalWords = stepWords;
+    const live = stepRef.current;
 
-    setTimeout(() => {
-      onGameEnd(finalScores, finalWords);
-    }, 0);
-  }
-}, [cfg.time, stopTimer, onGameEnd, scores, stepWords]);
+    if (live < cfg.steps.length) {
+      const next = live + 1;
+
+      setTimeout(() => {
+        stepRef.current = next;
+
+        setStep(next);
+        setSelected([]);
+        setCurrentWord("");
+        setTimeLeft(cfg.time);
+        setShowTransition(true);
+      }, 400);
+    } else {
+      stopTimer();
+
+      const finalScores = scoresRef.current;
+      const finalWords = stepWordsRef.current;
+
+      setTimeout(() => {
+        onGameEnd(finalScores, finalWords);
+      }, 0);
+    }
+  }, [cfg.time, stopTimer, onGameEnd, scores, stepWords]);
 
   const startTimer = useCallback(() => {
     stopTimer();
@@ -81,9 +88,8 @@ const advanceStep = useCallback(() => {
   useEffect(() => {
     if (!showTransition && step > 0) startTimer();
     return stopTimer;
-  }, [showTransition, step]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [showTransition, step]);
 
-  // ── Auto-submit with real-word validation ─────────────────────────────────
   const autoSubmit = useCallback(
     (word, stepIndex, len) => {
       if (!isValidWord(word)) {
@@ -130,31 +136,30 @@ const advanceStep = useCallback(() => {
     [advanceStep],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleGo = () => {
     setShowTransition(false);
     setSelected([]);
     setCurrentWord("");
   };
 
-  const handleLetterTap = (letter, idx) => {
-    if (selected.includes(idx)) return;
+const handleLetterTap = (letter, idx) => {
+  if (stepWords[currentStep].length >= MAX_WORDS_PER_ROUND) return;
+  if (currentWord.length >= wordLen) return;
 
-    // Block taps when the round is already full
-    if (stepWords[currentStep].length >= MAX_WORDS_PER_ROUND) return;
+  if (navigator.vibrate) navigator.vibrate(50);
+  sound.tap();
 
-    if (navigator.vibrate) navigator.vibrate(50);
-    sound.tap();
+  const newWord = currentWord + letter;
 
-    const newWord = currentWord + letter;
+  setSelected((s) => [...s, idx]);
+  setCurrentWord(newWord);
 
-    if (newWord.length === wordLen) {
+  if (newWord.length === wordLen) {
+    setTimeout(() => {
       autoSubmit(newWord, currentStep, wordLen);
-    } else {
-      setSelected((s) => [...s, idx]);
-      setCurrentWord(newWord);
-    }
-  };
+    }, 100);
+  }
+};
 
   const handleClear = () => {
     sound.error();
@@ -162,7 +167,6 @@ const advanceStep = useCallback(() => {
     setCurrentWord("");
   };
 
-  // ── Derived UI ─────────────────────────────────────────────────────────────
   const totalScore = scores.reduce((a, b) => a + b, 0);
   const wordsThisRound = stepWords[currentStep].length;
   const roundFull = wordsThisRound >= MAX_WORDS_PER_ROUND;

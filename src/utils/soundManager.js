@@ -1,49 +1,88 @@
+// Robust audio engine that handles browser autoplay policy correctly.
+//
+// KEY RULES browsers enforce:
+//  1. AudioContext must be created/resumed INSIDE a user-gesture handler.
+//  2. Audio elements need .play() called inside or directly after a gesture.
+//  3. A suspended AudioContext silently swallows all beeps — must resume first.
+//
+// STRATEGY:
+//  - _unlock() is called on every user interaction (tap, click, keydown).
+//    It creates + resumes the AudioContext and plays/unpauses bg music.
+//  - All beep calls run through _ensureCtx() which resumes if suspended.
+//  - Music is managed via a plain <audio> element (most reliable for looping mp3).
+//  - We keep one AudioContext alive for the whole session (never recreate).
+
 class SoundManager {
   constructor() {
-    this.ctx = null;
+    this.ctx = null; // AudioContext — created once, kept alive
     this.muted = false;
-    this.bgGain = null;
-    this.bgAudio = null; // To store the <audio> element
-    this.source = null;  // To store the media source
+    this.bgAudio = null; // <audio> element for bg music
+    this.unlocked = false; // true once a gesture has fired _unlock()
+    this._pendingMusic = false; // playMusic() called before unlock?
   }
 
-  _ctx() {
+  _ensureCtx() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-      this.bgGain = this.ctx.createGain();
-      this.bgGain.gain.value = 0.15; // Lower volume for background music
-      this.bgGain.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === "suspended") {
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
 
-  // ─── BACKGROUND MUSIC ───
+  unlock() {
+    if (this.unlocked) return;
+    this.unlocked = true;
+    this._ensureCtx();
+
+    if (this._pendingMusic && !this.muted) {
+      this._startBgAudio();
+    }
+  }
+
+  // ── Background music ───────────────────────────────────────────────────────
+  _startBgAudio() {
+    if (!this.bgAudio) {
+      this.bgAudio = new Audio("/bg-music.mp3");
+      this.bgAudio.loop = true;
+      this.bgAudio.volume = 0.18;
+    }
+
+    // Resume AudioContext first (belt-and-suspenders)
+    const ctx = this._ensureCtx();
+    const tryPlay = () => {
+      this.bgAudio.play().catch(() => {
+        // Autoplay still blocked — will retry on next user gesture via unlock()
+        this._pendingMusic = true;
+      });
+    };
+
+    if (ctx.state === "suspended") {
+      ctx
+        .resume()
+        .then(tryPlay)
+        .catch(() => {});
+    } else {
+      tryPlay();
+    }
+  }
+
   playMusic() {
     if (this.muted) return;
-    const ctx = this._ctx();
 
-    // If already playing, don't start again
-    if (this.bgAudio) {
-      if (this.bgAudio.paused) this.bgAudio.play();
+    if (!this.unlocked) {
+      // Gesture hasn't happened yet — flag it so unlock() fires it
+      this._pendingMusic = true;
       return;
     }
 
-    // 1. Create the Audio Element
-    // Ensure the song is in /public/sounds/bg-music.mp3
-    this.bgAudio = new Audio("/bg-music.mp3");
-    this.bgAudio.loop = true;
-    this.bgAudio.crossOrigin = "anonymous";
+    if (this.bgAudio && !this.bgAudio.paused) return; // already playing
+    this._startBgAudio();
+  }
 
-    // 2. Connect the Audio Element to the Web Audio Context
-    this.source = ctx.createMediaElementSource(this.bgAudio);
-    this.source.connect(this.bgGain);
-
-    // 3. Play
-    if (ctx.state === "suspended") {
-      ctx.resume().then(() => this.bgAudio.play());
-    } else {
-      this.bgAudio.play();
-    }
+  pauseMusic() {
+    this.bgAudio?.pause();
   }
 
   stopMusic() {
@@ -53,11 +92,13 @@ class SoundManager {
     }
   }
 
-  // ─── EXISTING OSCILLATOR BEEPS ───
+  // ── Oscillator beeps ───────────────────────────────────────────────────────
   beep(freq = 440, dur = 0.08, type = "sine", vol = 0.25) {
     if (this.muted) return;
     try {
-      const ctx = this._ctx();
+      const ctx = this._ensureCtx();
+      if (ctx.state === "suspended") return;
+
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -71,18 +112,35 @@ class SoundManager {
     } catch (_) {}
   }
 
-  tap()     { this.beep(880, 0.07, "triangle", 0.2); }
-  select()  { this.beep(660, 0.12, "sine",     0.25); }
-  success() { [440, 550, 660].forEach((f, i) => setTimeout(() => this.beep(f, 0.12, "sine", 0.3), i * 80)); }
-  error()   { this.beep(200, 0.18, "sawtooth", 0.2); }
-  tick()    { this.beep(300, 0.05, "square",   0.1); }
+  tap() {
+    this.beep(880, 0.07, "triangle", 0.2);
+  }
+  select() {
+    this.beep(660, 0.12, "sine", 0.25);
+  }
+  success() {
+    [440, 550, 660].forEach((f, i) =>
+      setTimeout(() => this.beep(f, 0.12, "sine", 0.3), i * 80),
+    );
+  }
+  error() {
+    this.beep(200, 0.18, "sawtooth", 0.2);
+  }
+  tick() {
+    this.beep(300, 0.05, "square", 0.1);
+  }
 
-  toggle(v) { 
-    this.muted = !v; 
+  // ── Mute toggle ────────────────────────────────────────────────────────────
+  // v = true  → sound ON
+  // v = false → sound OFF
+  toggle(v) {
+    this.muted = !v;
     if (this.muted) {
-      this.bgAudio?.pause();
+      this.pauseMusic();
     } else {
-      this.bgAudio?.play();
+      if (this.bgAudio) {
+        this.playMusic();
+      }
     }
   }
 }

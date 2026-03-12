@@ -23,11 +23,10 @@ const LetterTile = ({ letter, index, isSelected, onClick }) => {
               : "hover:scale-110"
           }`}
         style={{
-          // Use the hex glow color for the actual letter color
           color: isSelected ? "#ffffff" : jewel.glow,
           transform: `rotate(${rotation}deg)`,
           fontFamily: "'Ga Maamli', 'Poppins', sans-serif",
-          // Add a subtle text shadow to make the colors pop against the mesh background
+
           textShadow: isSelected
             ? `0 0 15px #fff, 0 0 30px ${jewel.glow}`
             : `2px 2px 0px rgba(0,0,0,0.15)`,
@@ -37,7 +36,6 @@ const LetterTile = ({ letter, index, isSelected, onClick }) => {
         {letter}
       </span>
 
-      {/* A tiny dot of color under the letter for extra "Jewel" vibe */}
       {!isSelected && (
         <div
           className="absolute -bottom-1 w-1.5 h-1.5 rounded-full blur-[2px] opacity-50"

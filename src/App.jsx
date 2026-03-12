@@ -1,17 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence } from "framer-motion";
 import Controls from "./components/Controls";
 import SplashScreen from "./components/SplashScreen";
 import LevelSelect from "./components/LevelSelect";
 import GameBoard from "./components/GameBoard";
 import ResultsScreen from "./components/ResultsScreen";
-
+import LevelResultScreen from "./components/LevelResultScreen";
 import sound from "./utils/soundManager";
 
 export default function App() {
-  // ── Theme & Sound ──
   const [dark, setDark] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
+  const [screen, setScreen] = useState("splash"); 
+  const [level, setLevel] = useState(null);
+
+  const [gameResults, setGameResults] = useState({
+    scores: [0, 0, 0],
+    stepWords: [[], [], []],
+  });
+
+  const [gameKey, setGameKey] = useState(0);
+
+  useEffect(() => {
+    const unlock = () => {
+      sound.unlock();
+      window.removeEventListener("pointerdown", unlock, true);
+      window.removeEventListener("keydown", unlock, true);
+    };
+
+    // 2. The Visibility Logic (Tab Switching)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // Re-sync/Resume the sound engine when the user returns
+        sound.unlock();
+        // If music was playing before they left,
+        // your sound.playMusic() logic in SoundManager
+        // will handle the re-start if it was paused by the OS.
+      }
+    };
+
+    // ─── Event Listeners ───
+    window.addEventListener("pointerdown", unlock, true);
+    window.addEventListener("keydown", unlock, true);
+
+    // Watch for the user leaving/returning to the tab
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("pointerdown", unlock, true);
+      window.removeEventListener("keydown", unlock, true);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
 
   const toggleDark = () => setDark((d) => !d);
   const toggleSound = () => {
@@ -21,18 +61,6 @@ export default function App() {
     });
   };
 
-  // ── Routing state ──
-  const [screen, setScreen] = useState("splash"); // splash | levels | game | results
-  const [level, setLevel] = useState(null);
-
-  const [gameResults, setGameResults] = useState({
-    scores: [0, 0, 0],
-    stepWords: { 1: [], 2: [], 3: [] },
-  });
-
-  const [gameKey, setGameKey] = useState(0);
-
-  //  Navigation handlers 
   const handleStart = () => {
     sound.select();
     sound.playMusic();
@@ -46,17 +74,21 @@ export default function App() {
 
   const handleGameEnd = (scores, stepWords) => {
     setGameResults({ scores, stepWords });
-    setScreen("results");
+    setScreen("levelResult");
   };
 
   const handlePlayAgain = () => {
-    setGameKey((k) => k + 1); // Increment key to force fresh GameBoard remount
+    setGameKey((k) => k + 1);
     setScreen("game");
   };
 
   const handleMenu = () => {
     setLevel(null);
     setScreen("levels");
+  };
+  // ✅ Added
+  const handleResultDismiss = () => {
+    setScreen("results");
   };
 
   return (
@@ -81,10 +113,20 @@ export default function App() {
 
         {screen === "game" && level && (
           <GameBoard
-            key={`game-${level}-${gameKey}`} // Dynamic key forces reset on play again
+            key={`game-${level}-${gameKey}`}
             dark={dark}
             level={level}
             onGameEnd={handleGameEnd}
+          />
+        )}
+
+        {screen === "levelResult" && (
+          <LevelResultScreen
+            key="levelResult"
+            dark={dark}
+            level={level}
+            stepWords={gameResults.stepWords}
+            onDismiss={handleResultDismiss}
           />
         )}
 
